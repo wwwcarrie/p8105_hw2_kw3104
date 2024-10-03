@@ -1,0 +1,84 @@
+---
+title: "p8105_hw2_kw3104"
+output: github_document
+---
+
+```{r setup}
+library(tidyverse)
+library(readxl)
+```
+
+## Problem 1
+Read and clean the data; retain line, station, name, station latitude / longitude, routes served, entry, vending, entrance type, and ADA compliance. Convert the entry variable from character (YES vs NO) to a logical variable (the ifelse or case_match function may be useful).
+
+```{r}
+stations_data = 
+  read_csv("data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv", 
+  col_types = cols(Route8 = "c", Route9 = "c", Route10 = "c", Route11 = "c")) %>% 
+  janitor::clean_names() %>% 
+  select(
+    line, station_name, station_latitude, station_longitude, 
+    starts_with("route"), entry, exit_only, vending, entrance_type, 
+    ada) %>% 
+  mutate(entry = ifelse(entry == "YES", TRUE, FALSE))
+```
+* This data is not tidy. To tidy up the data, I first load the NYC_Transit_Subway_Entrance_And_Exit_Data.csv file. I specify that `Route` columns 8-11 should be character for consistency with 1-7.  This dataset contain varibles like: division, Line, Station_name, Station_latitude, Station_longitude, Route1 to Route 11, Entrance_type, Entry, Exit Only, Vending, staffing, staff_hours, ADA, ADA_notes, Free_crossover, north_south_street, east_west_street, corner, entry_latitude, entrance_longitude, station_location and entrance_loctaion. Then I use `janitor` and `select` to chose those columns that I am interested. Also convert the entry variable from character `yes` vs `no` to logical variable `true` and `false`. There are 1868 rows and 20 columns of the resulting dataset. 
+
+
+```{r}
+stations_data %>%  
+  select(station_name, line) %>%  
+  distinct()
+```
+* There are 465 distinct stations.
+
+```{r}
+stations_data %>%  
+  filter(ada == TRUE) %>%  
+  select(station_name, line) %>%  
+  distinct()
+```
+* There are 84 stations are ADA compliant.
+
+```{r}
+stations_data %>%  
+  filter(vending == "NO") %>% 
+  pull(entry) %>%  
+  mean()
+```
+* There is 0.3770492 of station entrances / exits without vening allow entrance.
+
+```{r}
+stations_data %>%  
+  pivot_longer(
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route") %>% 
+  filter(route == "A") %>%  
+  select(station_name, line) %>% 
+  distinct()
+
+stations_data %>%  
+  pivot_longer(
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route") %>%  
+  filter(route == "A", ada == TRUE) %>% 
+  select(station_name, line) %>%  
+  distinct()
+```
+* There are 60 distinct stations serve the A train.
+* Of the stations that serve the A train, 17 are ADA compliant. 
+
+
+## Problem 2
+
+
+
+
+
+
+
+
+
+
