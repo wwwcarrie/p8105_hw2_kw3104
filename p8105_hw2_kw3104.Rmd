@@ -6,6 +6,7 @@ output: github_document
 ```{r setup}
 library(tidyverse)
 library(readxl)
+library(dplyr)
 ```
 
 ## Problem 1
@@ -80,15 +81,8 @@ omit rows that do not include dumpster-specific data
 round the number of sports balls to the nearest integer and converts the result to an integer variable (using `as.integer`)
 
 ```{r}
-# Load libraries
-library(readxl)
-library(dplyr)
+Trash_data = "./data/202409 Trash Wheel Collection Data.xlsx"
 
-# Correct file path
-Trash_data <- "./data/202409 Trash Wheel Collection Data.xlsx"  
-```
-
-```{r}
 Mr_Trash_Wheel = 
   read_excel(Trash_data, sheet = "Mr. Trash Wheel", range = "A2:N653") |> 
   janitor::clean_names() |>
@@ -114,15 +108,87 @@ Gwynnda_Trash_Wheel =
 
 combined_q2=bind_rows(Mr_Trash_Wheel,Prof_Trash_Wheel,Gwynnda_Trash_Wheel)
 ```
+For `Mr_Trash_Wheel`, extract "Mr. Trash Wheel" from the excel, select range A2 to N653. Mutate `sports balls` in to interger and round them. Convert `year` from character to double. The dataset `Mr. Trash Wheel` has 651 observations and 15 variables. 
 
-The data set `Mr. Trash Wheel` has 651 observations and 15 variables, the data set `Professor Trash Wheel` has 118 observations and 14 variables, the data set `Gwynnda Trash Wheel` has 263 observations and 13 variables.
+For `Prof_Trash_Wheel`, extract "Professor Trash Wheel" from the excel, select range A2 to M120.
+The dataset `Professor Trash Wheel` has 118 observations and 14 variables.
 
-The merged data of these three data sets has 1032 observations and 15 variables. The merged data contains variable `dumpster` which indicates the no. of dumpster and variables `year`, `month` and `date` which indicate the date, then `weight_tons` and viriables of different litter type show the amount of total litter and amount of each litter type. 
+For `Gwynnda_Trash_Wheel`, extract "Gwynnda Trash Wheel" from the excel, select range A2 to L265.
+The dataset `Gwynnda Trash Wheel` has 263 observations and 13 variables.
+
+The combined data of these three datasets `combined_q2` has 1032 observations and 15 variables. The combined dataset contains variable `dumpster` which indicates the number of dumpster and variables "year", "month", "date" and "weight_tons" etc. 
 
 The total weight of trash collected by Professor Trash Wheel is: `r sum(combined_q2$weight_tons[combined_q2$Trash_Wheel=="Prof"])`, the total number of cigarette butts collected by Gwynnda in June of 2022 is: `r sum(combined_q2$cigarette_butts[combined_q2$Trash_Wheel=="Gwynnda" & combined_q2$year=="2022" & combined_q2$month=="June"])`.
 
-```{r}
 
+## Problem 3
+```{r}
+Bakers = 
+  read_csv("./data/gbb_datasets/bakers.csv") |>
+  janitor::clean_names() |>
+  separate(baker_name, into = c("baker", "last_name"), sep = " ") |>
+  relocate(series)
+
+Bakes = 
+  read_csv("./data/gbb_datasets/bakes.csv") |>
+  janitor::clean_names()
+
+Results = 
+  read_csv("./data/gbb_datasets/results.csv", skip = 2) |>
+  janitor::clean_names()
+
+anti = anti_join(Bakes, Results, by = c("series","episode","baker"))
+
+bakes_results = full_join(Results, Bakes, by = c("series","episode","baker")) 
+GBBO = 
+left_join(bakes_results, Bakers, by = c("series", "baker")) |>
+  arrange(series, episode)
+
+write_csv(GBBO, "./data/GBBO.csv")
 ```
 
+For `Bakers`, load the csv file and clean_name. Because the name of baker contain both first name and last name in one cell, I separate the first name into "baker" and last name into "last_name". Then, relocate "bakers" to the first column. The dataset `Bakers` has 120 observations and 6 variables.
+
+For `Bakes`, load the csv file and clean_name. The dataset `Bakes` has 548 observations and 5 variables
+
+For `Results`, load the csv file, skip the first two row that contain non-related information, then clean_name. the dataset `Results` has 1136 observations and 5 variables.
+
+Use anti_join to check for completeness and correctness across datasets. 
+
+full join `Bakers` and `Bakes` files by "series", "epidode" and "baker". Output dataset as `bakes_results`.
+Left join `bakes_results` and `Bakers` by "series" and "baker". Arrange it by "series" and "episode". Output dataset as `GBBO`. The combined dataset of these three datasets `GBBO` has 1144 observations and 15 variables. The combined dataset contains variable "series", "episode", "baker" and "results", etc. 
+
+Finaly, output `GBBO` to a csv file. 
+
+
+```{r}
+star_winner = GBBO |>
+  filter((result == "WINNER" | result == "STAR BAKER")& series >= 5 & series <= 10) |>
+  select(series, episode, baker, result) 
+q2_table = as.table(as.matrix(star_winner))
+q2_table
+```
+
+There were no predictable result for the final winner. Some person won "star baker" many times but didn't won the final "winner", and some person didn't won "star barker" on previous episode, but won the "winner" at the end. 
+
+```{r}
+Viewers = read_csv("./data/gbb_datasets/viewers.csv") |>
+  janitor::clean_names()|>
+  head(10)
+
+average_series1 = mean(pull(Viewers, series_1), na.rm = TRUE)
+average_series5 = mean(pull(Viewers, series_5))
+```
+
+Load the csv file, clean_name and use "head(10)" to show first 10 rows. 
+
+The average viewership in Season 1 is 2.77.
+The average viewership in Season 5 is 10.0393. 
+
+
+  
+  
+  
+  
+```
 
